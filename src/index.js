@@ -14,14 +14,21 @@ const utils = {
     }
 }
 
-function RangeSliderInput (opts) {
+function RangeSliderInput(opts) {
     const el = utils.el()
-    const shadow = el.attachShadow({mode:'closed'})
+    const shadow = el.attachShadow({ mode: 'closed' })
 
-    const input_range = InputRange(opts)
-    const range_slider = RangeSlider(opts)
+    const input_range = InputRange(opts, listen)
+    const range_slider = RangeSlider(opts, listen)
+    const output = utils.el()
+    output.innerText = 0
 
-    shadow.append(range_slider, input_range)
+    shadow.append(range_slider, input_range, output)
 
     return el
+
+    function listen (message) {
+        const { type, body } = message
+        if (type === 'update') output.innerText = body
+    } 
 }
