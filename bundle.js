@@ -1,6 +1,6 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 const RangeSlider = require('..')
-const slider = RangeSlider()
+const slider = RangeSlider({min: 0, max: 10})
 document.body.append(slider)
 },{"..":4}],2:[function(require,module,exports){
 module.exports = InputRange
@@ -9,10 +9,36 @@ const sheet = new CSSStyleSheet
 sheet.replaceSync(getTheme())
 
 const e = document.createElement.bind(document)
-function InputRange ({min = 0, max = 100} = {min: 0, max: 100}) {
+function InputRange({ min = 0, max = 100 } = { min: 0, max: 100 }, protocol) {
+    const notify = protocol (listen)
+    const handlers = {
+        onkeyup(e) {
+            if (utils.isWiderThan(e.target.min, e.target.value)) return
+            actions.ensureRange(e)
+        },
+        onleave(e) {
+            if (utils.isWiderThan(e.target.min, e.target.value)) return e.target.value = ''
+            actions.ensureRange(e)
+        }
+    }
+    const utils = {
+        isWiderThan(any1, any2) {
+            return any1.toString().length > any2.toString().length
+        }
+    }
+    const actions = {
+        ensureRange(e) {
+            const el = e.target
+            const val = new Number(el.value)
+            if (val > el.max) el.value = el.max
+            else if (val < el.min) el.value = el.min
+            if (notify) notify({ type: 'update', data: Number(el.value) })
+        }
+    }
+
     const el = e('div')
-    const shadow = el.attachShadow({mode: 'closed'})
-    
+    const shadow = el.attachShadow({ mode: 'closed' })
+
     const input = e('input')
     input.type = 'number'
     input.min = min
@@ -20,38 +46,19 @@ function InputRange ({min = 0, max = 100} = {min: 0, max: 100}) {
     input.onkeyup = handlers.onkeyup
     input.onpointerleave = handlers.onleave
     input.onblur = handlers.onleave
-    
+
     shadow.appendChild(input)
     shadow.adoptedStyleSheets = [sheet]
 
     return el
-}
 
-const handlers = {
-    onkeyup(e) {
-        if (utils.isWiderThan(e.target.min, e.target.value)) return
-        actions.ensureRange(e)
-    },
-    onleave(e) {
-        if (utils.isWiderThan(e.target.min, e.target.value)) return e.target.value = ''
-        actions.ensureRange(e)
-    }
-}
-const utils = {
-    isWiderThan(any1, any2) {
-        return any1.toString().length > any2.toString().length
-    }
-}
-const actions = {
-    ensureRange(e) {
-        const el = e.target
-        const val = new Number(el.value)
-        if (val > el.max) el.value = el.max
-        else if (val < el.min) el.value = el.min
+    function listen (message) {
+        const { type, data } = message
+        if (type === 'update') input.value = data
     }
 }
 
-function getTheme () {
+function getTheme() {
     return `
         input {
             padding: 0.5em 1em;
@@ -62,9 +69,34 @@ function getTheme () {
 },{}],3:[function(require,module,exports){
 module.exports = RangeSlider
 
-function RangeSlider ({min = 0, max = 100} = {min: 0, max: 100}) {
+function RangeSlider({ min = 0, max = 100 } = { min: 0, max: 100 }, protocol) {
+    const notify = protocol(listen)
+    const handlers = {
+        oninput(e) {
+            const el = e.target
+            if (notify) notify({type: 'update', data: Number(el.value)})
+            const val = el.value / el.max * 100
+            actions.changeWidthTo(val, bar.querySelector('.fill'))
+        }
+    }
+    const utils = {
+        el(x) {
+            return document.createElement(x)
+        },
+        div(x, el = 'div') {
+            const elm = utils.el(el)
+            if (x) elm.classList.add(x)
+            return elm
+        }
+    }
+    const actions = {
+        changeWidthTo(val, el) {
+            el.style.width = `${val}%`
+        }
+    }
+
     const el = utils.div()
-    const shadow = el.attachShadow({mode:'closed'})
+    const shadow = el.attachShadow({ mode: 'closed' })
 
     const input = utils.el('input')
     input.type = 'range'
@@ -84,39 +116,27 @@ function RangeSlider ({min = 0, max = 100} = {min: 0, max: 100}) {
     shadow.append(style, input, bar)
 
     return el
-}
 
-const handlers = {
-    oninput (e) {
-        const el = e.target
-        const val = el.value/el.max * 100
-        const bar = el.nextElementSibling
-        actions.changeWidthTo(val, bar.querySelector('.fill'))
-    }
-}
-const utils = {
-    el(x) {
-        return document.createElement(x)
-    },
-    div(x, el = 'div') {
-        const elm = utils.el(el)
-        if (x) elm.classList.add(x)
-        return elm
-    }
-}
-const actions = {
-    changeWidthTo(val, el) {
-        el.style.width = `${val}%`
+    function listen (message) {
+        const { type, data } = message
+        if (type === 'update') {
+            input.value = data
+            const val = data / input.max * 100
+            actions.changeWidthTo(val, fill)
+            input.focus()
+        }
     }
 }
 
-function getTheme () {
+function getTheme() {
     return `
-        * {
-            box-sizing: border-box;
+        :host {
             width: 100%;
             height: 2em;
             position: relative;
+        }
+        * {
+            box-sizing: border-box;
             --transparent: hsla(0, 0%, 0%, 0);
             --grey: hsl(0, 0%, 75%);
             --focus: blue;
@@ -184,16 +204,60 @@ const utils = {
     }
 }
 
-function RangeSliderInput (opts) {
+function RangeSliderInput(opts, parentProtocol) {
+    const notify = parentProtocol ? parentProtocol(listenParent) : undefined
+    const state = {
+        components: [],
+        syncValue(value) {
+            for (const notify of this.components)
+                notify({
+                    type: 'update',
+                    data: value,
+                })
+        }
+    }
     const el = utils.el()
-    const shadow = el.attachShadow({mode:'closed'})
+    const shadow = el.attachShadow({ mode: 'closed' })
 
-    const input_range = InputRange(opts)
-    const range_slider = RangeSlider(opts)
+    const input_range = InputRange(opts, protocol)
+    const range_slider = RangeSlider(opts, protocol)
+    const output = utils.el()
+    output.innerText = 0
 
-    shadow.append(range_slider, input_range)
+    const style = utils.el('style')
+    style.textContent = getTheme()
+
+    shadow.append(style, range_slider, input_range, output)
 
     return el
+
+    function protocol(notify) {
+        state.components.push(notify)
+        return listen
+    }
+    function listen(message) {
+        const { type, data } = message
+        if (type === 'update') {
+            output.innerText = data
+            state.syncValue(data)
+        }
+        if (notify) notify(message)
+    }
+
+    function listenParent(message) {
+        const { type, data } = message
+        if (type === 'update') {
+            output.innerText = data
+            state.syncValue(data)
+        }
+    }
 }
 
+function getTheme() {
+    return `
+        * {
+        margin: 1em;
+        }
+    `
+}
 },{"@v142857/input-range":2,"@v142857/range-slider":3}]},{},[1]);

@@ -14,21 +14,59 @@ const utils = {
     }
 }
 
-function RangeSliderInput(opts) {
+function RangeSliderInput(opts, parentProtocol) {
+    const notify = parentProtocol ? parentProtocol(listenParent) : undefined
+    const state = {
+        components: [],
+        syncValue(value) {
+            for (const notify of this.components)
+                notify({
+                    type: 'update',
+                    data: value,
+                })
+        }
+    }
     const el = utils.el()
     const shadow = el.attachShadow({ mode: 'closed' })
 
-    const input_range = InputRange(opts, listen)
-    const range_slider = RangeSlider(opts, listen)
+    const input_range = InputRange(opts, protocol)
+    const range_slider = RangeSlider(opts, protocol)
     const output = utils.el()
     output.innerText = 0
 
-    shadow.append(range_slider, input_range, output)
+    const style = utils.el('style')
+    style.textContent = getTheme()
+
+    shadow.append(style, range_slider, input_range, output)
 
     return el
 
-    function listen (message) {
-        const { type, body } = message
-        if (type === 'update') output.innerText = body
-    } 
+    function protocol(notify) {
+        state.components.push(notify)
+        return listen
+    }
+    function listen(message) {
+        const { type, data } = message
+        if (type === 'update') {
+            output.innerText = data
+            state.syncValue(data)
+        }
+        if (notify) notify(message)
+    }
+
+    function listenParent(message) {
+        const { type, data } = message
+        if (type === 'update') {
+            output.innerText = data
+            state.syncValue(data)
+        }
+    }
+}
+
+function getTheme() {
+    return `
+        * {
+        margin: 1em;
+        }
+    `
 }
