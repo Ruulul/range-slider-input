@@ -25,18 +25,14 @@ function RangeSliderInput(opts, protocol) {
 
     function sub_protocol(notify, from) {
         state[from] = notify
-        return sub_listen
+        return listen
     }
-    function sub_listen(message) {
+    function listen(message) {
         const { head: [from], type } = message
         if (type === 'update')
         for (const [id, notify] of Object.entries(state))
             if (id !== from) notify(message)
         notify({...message, head: [name]})
-    }
-
-    function listen(message) {
-        if (message.type === 'update') sub_listen(message)
     }
 }
 
