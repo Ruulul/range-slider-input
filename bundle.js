@@ -221,13 +221,12 @@ function RangeSliderInput(opts, parentProtocol) {
 
     const input_range = InputRange(opts, protocol)
     const range_slider = RangeSlider(opts, protocol)
-    const output = utils.el()
-    output.innerText = 0
+    range_slider.style.height = '1em'
 
     const style = utils.el('style')
     style.textContent = getTheme()
 
-    shadow.append(style, range_slider, input_range, output)
+    shadow.append(style, range_slider, input_range)
 
     return el
 
@@ -237,24 +236,23 @@ function RangeSliderInput(opts, parentProtocol) {
     }
     function listen(message) {
         const { type, data } = message
-        if (type === 'update') {
-            output.innerText = data
-            state.syncValue(data)
-        }
+        if (type === 'update') state.syncValue(data)
         if (notify) notify(message)
     }
 
     function listenParent(message) {
         const { type, data } = message
-        if (type === 'update') {
-            output.innerText = data
-            state.syncValue(data)
-        }
+        if (type === 'update') state.syncValue(data)
     }
 }
 
 function getTheme() {
     return `
+        :host {
+            display: grid;
+            grid-template-columns: 8fr 1fr;
+            align-items: center;
+        }
         * {
         margin: 1em;
         }
