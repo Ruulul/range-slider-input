@@ -1,64 +1,64 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-const RangeSlider = require('..')
-const slider = RangeSlider({min: 0, max: 10})
-document.body.append(slider)
-},{"..":4}],2:[function(require,module,exports){
 module.exports = InputRange
 
-const sheet = new CSSStyleSheet
-sheet.replaceSync(getTheme())
-
-const e = document.createElement.bind(document)
-function InputRange({ min = 0, max = 100 } = { min: 0, max: 100 }, protocol) {
-    const notify = protocol (listen)
-    const handlers = {
-        onkeyup(e) {
-            if (utils.isWiderThan(e.target.min, e.target.value)) return
-            actions.ensureRange(e)
-        },
-        onleave(e) {
-            if (utils.isWiderThan(e.target.min, e.target.value)) return e.target.value = ''
-            actions.ensureRange(e)
-        }
-    }
-    const utils = {
-        isWiderThan(any1, any2) {
-            return any1.toString().length > any2.toString().length
-        }
-    }
-    const actions = {
-        ensureRange(e) {
-            const el = e.target
-            const val = new Number(el.value)
-            if (val > el.max) el.value = el.max
-            else if (val < el.min) el.value = el.min
-            if (notify) notify({ type: 'update', data: Number(el.value) })
-        }
-    }
-
-    const el = e('div')
+const id = 'v142857-input-range'
+var count = 0
+function InputRange({min, max} = {}, protocol) {
+    const name = `${id}-${count++}`
+    const notify = protocol(listen, name)
+    const el = document.createElement('div')
     const shadow = el.attachShadow({ mode: 'closed' })
 
-    const input = e('input')
-    input.type = 'number'
-    input.min = min
-    input.max = max
-    input.onkeyup = handlers.onkeyup
-    input.onpointerleave = handlers.onleave
-    input.onblur = handlers.onleave
+    const input = document.createElement('input')
+    Object.assign(input, {
+        type: 'number',
+        min, max,
+        oninput: respond,
+        onkeyup,
+        onblur: onleave,
+    })
+    if (!min) input.removeAttribute('min')
+    if (!max) input.removeAttribute('max')
 
-    shadow.appendChild(input)
-    shadow.adoptedStyleSheets = [sheet]
+    const style = document.createElement('style')
+    style.textContent = get_theme()
+
+    shadow.append(style, input)
 
     return el
 
-    function listen (message) {
-        const { type, data } = message
-        if (type === 'update') input.value = data
+    function listen(message) {
+        const { type, data: { value, min, max } = {} } = message
+        if (type === 'update') {
+            if (value) input.value = value
+            if (min) input.min = min
+            if (max) input.max = max
+        }
+    }
+    function respond() {
+        notify({ head: [name], type: 'update', data: { value: Number(input.value) } })
+    }
+    function onkeyup({ target: el }) {
+        if (el.min && !is_wider_than(el.min, el.value))
+            ensure_range(el)
+        respond()
+    }
+    function onleave({ target: el }) {
+        if (el.min && !is_wider_than(el.min, el.value)) 
+            ensure_range(el)
+        respond()
+    }
+    function is_wider_than(any1, any2) {
+        return any1.toString().length > any2.toString().length
+    }
+    function ensure_range(el) {
+        const val = Number(el.value)
+        if (val > el.max) el.value = el.max
+        else if (val < el.min) el.value = el.min
     }
 }
 
-function getTheme() {
+function get_theme() {
     return `
         input {
             padding: 0.5em 1em;
@@ -66,69 +66,150 @@ function getTheme() {
         }
     `
 }
-},{}],3:[function(require,module,exports){
-module.exports = RangeSlider
+},{}],2:[function(require,module,exports){
+const RangeSlider = require('..')
+const InputRange = require('@v142857/input-range')
 
-function RangeSlider({ min = 0, max = 100 } = { min: 0, max: 100 }, protocol) {
-    const notify = protocol(listen)
-    const handlers = {
-        oninput(e) {
-            const el = e.target
-            if (notify) notify({type: 'update', data: Number(el.value)})
-            const val = el.value / el.max * 100
-            actions.changeWidthTo(val, bar.querySelector('.fill'))
-        }
-    }
-    const utils = {
-        el(x) {
-            return document.createElement(x)
-        },
-        div(x, el = 'div') {
-            const elm = utils.el(el)
-            if (x) elm.classList.add(x)
-            return elm
-        }
-    }
-    const actions = {
-        changeWidthTo(val, el) {
-            el.style.width = `${val}%`
-        }
-    }
+const state = {}
+const min = InputRange(undefined, protocol('min'))
+const max = InputRange(undefined, protocol('max'))
+const slider = RangeSlider({min: 0, max: 10}, protocol('slider'))
+state.min.notify({type: 'update', data: {value: 0}})
+state.max.notify({type: 'update', data: {value: 10}})
 
-    const el = utils.div()
+document.body.append(min, max, slider)
+
+function protocol(petname) {
+    return (notify, id) => {
+        state[petname] = { id, notify }
+        return listen(petname)
+    }
+}
+function listen(petname) {
+    return message => {
+        const { type, data } = message
+        if (type === 'update')
+        switch (petname) {
+            case 'min':
+            case 'max':
+                state.slider.notify({head: [state[petname].id], type: 'update', data: {[petname]: data.value, no_focus: true}})
+        }
+    }
+}
+},{"..":3,"@v142857/input-range":1}],3:[function(require,module,exports){
+const InputRange = require('@v142857/input-range')
+const RangeSlider = require('@v142857/range-slider')
+
+module.exports = RangeSliderInput
+
+const id = "v142857-range-slider-input"
+var count = 0
+function RangeSliderInput(opts, protocol) {
+    const name = `${id}-${count++}`
+    const notify = protocol(listen, name)
+    const state = {}
+    const el = document.createElement('div')
     const shadow = el.attachShadow({ mode: 'closed' })
 
-    const input = utils.el('input')
-    input.type = 'range'
-    input.min = min
-    input.max = max
-    input.value = min
-    input.oninput = handlers.oninput
+    const input_range = InputRange(opts, sub_protocol)
+    const range_slider = RangeSlider(opts, sub_protocol)
+    range_slider.style.height = '1em'
 
-    const bar = utils.div('bar')
-    const ruler = utils.div('ruler')
-    const fill = utils.div('fill')
+    const style = document.createElement('style')
+    style.textContent = get_theme()
+
+    shadow.append(style, range_slider, input_range)
+
+    return el
+
+    function sub_protocol(notify, from) {
+        state[from] = notify
+        return sub_listen
+    }
+    function sub_listen(message) {
+        const { head: [from], type } = message
+        if (type === 'update')
+        for (const [id, notify] of Object.entries(state))
+            if (id !== from) notify(message)
+        notify({...message, head: [name]})
+    }
+
+    function listen(message) {
+        if (message.type === 'update') sub_listen(message)
+    }
+}
+
+function get_theme() {
+    return `
+        :host {
+            display: grid;
+            grid-template-columns: 8fr 1fr;
+            align-items: center;
+        }
+        * {
+        margin: 1em;
+        }
+    `
+}
+},{"@v142857/input-range":1,"@v142857/range-slider":4}],4:[function(require,module,exports){
+module.exports = RangeSlider
+
+const id = 'v142857-range-slider'
+var count = 0
+function RangeSlider({ min = 0, max = 100 } = { min: 0, max: 100 }, protocol) {
+    const name = `${id}-${count++}`
+    const notify = protocol(listen, name)
+    const el = document.createElement('div')
+    const shadow = el.attachShadow({ mode: 'closed' })
+
+    const input = document.createElement('input')
+    Object.assign(input, {
+        type: 'range',
+        min, max, value: min,
+        oninput,
+    })
+    const bar = create_with_class('bar')
+    const ruler = create_with_class('ruler')
+    const fill = create_with_class('fill')
     bar.append(ruler, fill)
 
-    const style = utils.el('style')
-    style.textContent = getTheme()
+    const style = document.createElement('style')
+    style.textContent = get_theme()
 
     shadow.append(style, input, bar)
 
     return el
 
-    function listen (message) {
-        const { type, data } = message
+    function listen(message) {
+        const { type, data: { value, min, max, no_focus } = {} } = message
         if (type === 'update') {
-            input.value = data
-            const val = data / input.max * 100
-            actions.changeWidthTo(val, fill)
-            input.focus()
+            if (value) input.value = value
+            if (min) input.min = min
+            if (max) input.max = max
+            const val = (input.value - input.min) / (input.max - input.min) * 100
+            change_width_to(val, fill)
+            if (!no_focus) input.focus()
         }
+    }
+
+    function oninput({ target: el }) {
+        notify({ head: [name], type: 'update', data: { value: Number(el.value) } })
+        const val = (el.value - el.min) / (el.max - el.min) * 100
+        change_width_to(val, bar.querySelector('.fill'))
+    }
+
+    function change_width_to(val, el) {
+        el.style.width = `${val}%`
+    }
+
+    function create_with_class(x, tag = 'div') {
+        const el = document.createElement(tag)
+        if (x) el.classList.add(x)
+        return el
     }
 }
 
-function getTheme() {
+function get_theme() {
     return `
         :host {
             width: 100%;
@@ -187,75 +268,4 @@ function getTheme() {
         }
    `
 }
-},{}],4:[function(require,module,exports){
-const InputRange = require('@v142857/input-range')
-const RangeSlider = require('@v142857/range-slider')
-
-module.exports = RangeSliderInput
-
-const utils = {
-    el(tag = 'div') {
-        return document.createElement(tag)
-    },
-    elWithClass(class_name, tag = 'div') {
-        const el = utils.el(tag)
-        el.classList.add(class_name)
-        return el
-    }
-}
-
-function RangeSliderInput(opts, parentProtocol) {
-    const notify = parentProtocol ? parentProtocol(listenParent) : undefined
-    const state = {
-        components: [],
-        syncValue(value) {
-            for (const notify of this.components)
-                notify({
-                    type: 'update',
-                    data: value,
-                })
-        }
-    }
-    const el = utils.el()
-    const shadow = el.attachShadow({ mode: 'closed' })
-
-    const input_range = InputRange(opts, protocol)
-    const range_slider = RangeSlider(opts, protocol)
-    range_slider.style.height = '1em'
-
-    const style = utils.el('style')
-    style.textContent = getTheme()
-
-    shadow.append(style, range_slider, input_range)
-
-    return el
-
-    function protocol(notify) {
-        state.components.push(notify)
-        return listen
-    }
-    function listen(message) {
-        const { type, data } = message
-        if (type === 'update') state.syncValue(data)
-        if (notify) notify(message)
-    }
-
-    function listenParent(message) {
-        const { type, data } = message
-        if (type === 'update') state.syncValue(data)
-    }
-}
-
-function getTheme() {
-    return `
-        :host {
-            display: grid;
-            grid-template-columns: 8fr 1fr;
-            align-items: center;
-        }
-        * {
-        margin: 1em;
-        }
-    `
-}
-},{"@v142857/input-range":2,"@v142857/range-slider":3}]},{},[1]);
+},{}]},{},[2]);

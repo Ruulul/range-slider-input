@@ -3,60 +3,44 @@ const RangeSlider = require('@v142857/range-slider')
 
 module.exports = RangeSliderInput
 
-const utils = {
-    el(tag = 'div') {
-        return document.createElement(tag)
-    },
-    elWithClass(class_name, tag = 'div') {
-        const el = utils.el(tag)
-        el.classList.add(class_name)
-        return el
-    }
-}
-
-function RangeSliderInput(opts, parentProtocol) {
-    const notify = parentProtocol ? parentProtocol(listenParent) : undefined
-    const state = {
-        components: [],
-        syncValue(value) {
-            for (const notify of this.components)
-                notify({
-                    type: 'update',
-                    data: value,
-                })
-        }
-    }
-    const el = utils.el()
+const id = "v142857-range-slider-input"
+var count = 0
+function RangeSliderInput(opts, protocol) {
+    const name = `${id}-${count++}`
+    const notify = protocol(listen, name)
+    const state = {}
+    const el = document.createElement('div')
     const shadow = el.attachShadow({ mode: 'closed' })
 
-    const input_range = InputRange(opts, protocol)
-    const range_slider = RangeSlider(opts, protocol)
+    const input_range = InputRange(opts, sub_protocol)
+    const range_slider = RangeSlider(opts, sub_protocol)
     range_slider.style.height = '1em'
 
-    const style = utils.el('style')
-    style.textContent = getTheme()
+    const style = document.createElement('style')
+    style.textContent = get_theme()
 
     shadow.append(style, range_slider, input_range)
 
     return el
 
-    function protocol(notify) {
-        state.components.push(notify)
-        return listen
+    function sub_protocol(notify, from) {
+        state[from] = notify
+        return sub_listen
     }
-    function listen(message) {
-        const { type, data } = message
-        if (type === 'update') state.syncValue(data)
-        if (notify) notify(message)
+    function sub_listen(message) {
+        const { head: [from], type } = message
+        if (type === 'update')
+        for (const [id, notify] of Object.entries(state))
+            if (id !== from) notify(message)
+        notify({...message, head: [name]})
     }
 
-    function listenParent(message) {
-        const { type, data } = message
-        if (type === 'update') state.syncValue(data)
+    function listen(message) {
+        if (message.type === 'update') sub_listen(message)
     }
 }
 
-function getTheme() {
+function get_theme() {
     return `
         :host {
             display: grid;

@@ -1,34 +1,20 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@v142857/input-range': ^0.0.3
-  '@v142857/range-slider': ^0.0.2
+  '@v142857/input-range': ^0.3.1
+  '@v142857/range-slider': ^0.2.0
   browserify: ^17.0.0
   budo: ^11.8.4
 
 dependencies:
-  '@v142857/input-range': 0.0.3
-  '@v142857/range-slider': 0.0.2
+  '@v142857/input-range': link:../input-range
+  '@v142857/range-slider': link:../range-slider
 
 devDependencies:
   browserify: 17.0.0
   budo: 11.8.4
 
 packages:
-
-  /@v142857/input-range/0.0.1:
-    resolution: {integrity: sha512-0OEN/TAR97mpMnglX85Q6uRUAiDVARNCs57blKZIFql8ZTZQ9K+nMVwmRsjHXJv8zeJkdWrBvhNngRsf1Hmasw==}
-    dev: false
-
-  /@v142857/input-range/0.0.3:
-    resolution: {integrity: sha512-EMde7g7cHiGII4wFGQQO3ec83MOsDqsW4ma7188ocd7Rkjd83Ow3PF/yEfZ0NAXUHSt/1sMBD0TyccunZC0AQw==}
-    dependencies:
-      '@v142857/input-range': 0.0.1
-    dev: false
-
-  /@v142857/range-slider/0.0.2:
-    resolution: {integrity: sha512-XowAGtNzRqDHoHlAeHF8fXxNahFLe3Buf7CsWTQZ+RxfhLqvCiq0EFEj/VXkIc+qqU2QazkBkzGMkSN6VnRwkg==}
-    dev: false
 
   /JSONStream/1.3.5:
     resolution: {integrity: sha512-E+iruNOY8VV9s4JEbe1aNEm6MiszPRr/UfcHMz0TQh1BXSxHK+ASV1R6W4HpjBhSeS+54PIsAMCBmwD06LLsqQ==}
